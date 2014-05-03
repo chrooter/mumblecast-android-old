@@ -66,7 +66,7 @@ public class MainActivity extends ActionBarActivity {
     private Cast.Listener mCastListener;
     private ConnectionCallbacks mConnectionCallbacks;
     private ConnectionFailedListener mConnectionFailedListener;
-    private HelloWorldChannel mMumbleChannel;
+    private MumbleChannel mMumbleChannel;
     private boolean mApplicationStarted;
     private boolean mWaitingForReconnect;
     private String mSessionId;
@@ -290,7 +290,7 @@ public class MainActivity extends ActionBarActivity {
 
                                                 // Create the custom message
                                                 // channel
-                                                mMumbleChannel = new HelloWorldChannel();
+                                                mMumbleChannel = new MumbleChannel();
                                                 try {
                                                     Cast.CastApi
                                                             .setMessageReceivedCallbacks(
@@ -399,7 +399,7 @@ public class MainActivity extends ActionBarActivity {
     /**
      * Custom message channel
      */
-    class HelloWorldChannel implements MessageReceivedCallback {
+    class MumbleChannel implements MessageReceivedCallback {
 
         /**
          * @return custom namespace
