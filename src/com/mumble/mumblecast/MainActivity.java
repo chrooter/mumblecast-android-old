@@ -66,7 +66,7 @@ public class MainActivity extends ActionBarActivity {
     private Cast.Listener mCastListener;
     private ConnectionCallbacks mConnectionCallbacks;
     private ConnectionFailedListener mConnectionFailedListener;
-    private HelloWorldChannel mHelloWorldChannel;
+    private HelloWorldChannel mMumbleChannel;
     private boolean mApplicationStarted;
     private boolean mWaitingForReconnect;
     private String mSessionId;
@@ -247,9 +247,8 @@ public class MainActivity extends ActionBarActivity {
                         // Re-create the custom message channel
                         try {
                             Cast.CastApi.setMessageReceivedCallbacks(
-                                    mApiClient,
-                                    mHelloWorldChannel.getNamespace(),
-                                    mHelloWorldChannel);
+                                    mApiClient, mMumbleChannel.getNamespace(),
+                                    mMumbleChannel);
                         } catch (IOException e) {
                             Log.e(TAG, "Exception while creating channel", e);
                         }
@@ -291,14 +290,14 @@ public class MainActivity extends ActionBarActivity {
 
                                                 // Create the custom message
                                                 // channel
-                                                mHelloWorldChannel = new HelloWorldChannel();
+                                                mMumbleChannel = new HelloWorldChannel();
                                                 try {
                                                     Cast.CastApi
                                                             .setMessageReceivedCallbacks(
                                                                     mApiClient,
-                                                                    mHelloWorldChannel
+                                                                    mMumbleChannel
                                                                             .getNamespace(),
-                                                                    mHelloWorldChannel);
+                                                                    mMumbleChannel);
                                                 } catch (IOException e) {
                                                     Log.e(TAG,
                                                             "Exception while creating channel",
@@ -351,11 +350,10 @@ public class MainActivity extends ActionBarActivity {
                 if (mApiClient.isConnected()) {
                     try {
                         Cast.CastApi.stopApplication(mApiClient, mSessionId);
-                        if (mHelloWorldChannel != null) {
+                        if (mMumbleChannel != null) {
                             Cast.CastApi.removeMessageReceivedCallbacks(
-                                    mApiClient,
-                                    mHelloWorldChannel.getNamespace());
-                            mHelloWorldChannel = null;
+                                    mApiClient, mMumbleChannel.getNamespace());
+                            mMumbleChannel = null;
                         }
                     } catch (IOException e) {
                         Log.e(TAG, "Exception while removing channel", e);
@@ -377,10 +375,10 @@ public class MainActivity extends ActionBarActivity {
      * @param message
      */
     private void sendMessage(String message) {
-        if (mApiClient != null && mHelloWorldChannel != null) {
+        if (mApiClient != null && mMumbleChannel != null) {
             try {
                 Cast.CastApi.sendMessage(mApiClient,
-                        mHelloWorldChannel.getNamespace(), message)
+                        mMumbleChannel.getNamespace(), message)
                         .setResultCallback(new ResultCallback<Status>() {
                             @Override
                             public void onResult(Status result) {
