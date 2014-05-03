@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+   body {
+     
+   }
+    </style>
+    <title>Mumblecast</title>
+  </head>
+  <body>
+ <div id="message">Talk to me</div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+    <script src="//connect.soundcloud.com/sdk.js"></script>
+    <script type="text/javascript" src="//www.youtube.com/iframe_api"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+      var queue = [];
+      var index = -1;
+      var currentSound = null;
+
+      var addToQueue = function(track) {
+        queue.push(track);
+      };
+
+      var playNext = function() {
+        index++;
+        var next = queue[index];
+        if (currentSound != null) currentSound.stop();
+        streamSong(next.id);
+      };
+
+      var streamSong = function(id) {
+        SC.stream("/tracks/" + id, {onfinish: playNext}, function(sound) {
+          currentSound = sound;
+          currentSound.play();
+        });
+      };
+
+      var userConnected = function(user) {
+        $("#users").append("<div>" + user + "</div>");
+      };
+
+      var onYouTubePlayerAPIReady = function() {
+        var videoBox = $("#video1");
+        videoBox.ytplayer = new YT.Player(videoBox, {
+          videoId: 'kXDiGtgPL6E',
+          playerVars: {
+            //controls: 0,
+            wmode:'transparent'
+          },
+          height: '200',
+          width: '320'
+        });
+      };
+
+      /* User events */
+      $("#next").click(function() {
+        console.log("coucou");
+        playNext();
+      });
+
+
+      /* Main */
+
+      SC.initialize({
+        client_id: "d07779451ce9508678bdd995685ad9b0"
+      });
+
+      SC.get("/tracks", {limit: 10}, function(tracks) {
+        for (var i = 0; i < tracks.length; i++) {
+          addToQueue(tracks[i]);
+        }
+        playNext();
+      });
+
+      onYouTubePlayerAPIReady();
+
+      //initializeCast();
+
+
+      /* Cast */
+      
+      function handleMessage(message) {
+        document.getElementById("message").innerHTML=message + "coucou";
+        if (message == "next") playNext();
+        window.castReceiverManager.setApplicationState(message);
+      };
+
+      var initializeCast = function() {
+        cast.receiver.logger.setLevelValue(0);
+        window.castReceiverManager = cast.receiver.CastReceiverManager.getInstance();
+        console.log('Starting Receiver Manager');
+        
+        // handler for the 'ready' event
+        castReceiverManager.onReady = function(event) {
+          console.log('Received Ready event: ' + JSON.stringify(event.data));
+          window.castReceiverManager.setApplicationState("Application status is ready...");
+        };
+        
+        // handler for 'senderconnected' event
+        castReceiverManager.onSenderConnected = function(event) {
+          console.log('Received Sender Connected event: ' + event.data);
+          console.log(window.castReceiverManager.getSender(event.data).userAgent);
+          userConnected(window.castReceiverManager.getSender(event.data).userAgent);
+        };
+        
+        // handler for 'senderdisconnected' event
+        castReceiverManager.onSenderDisconnected = function(event) {
+          console.log('Received Sender Disconnected event: ' + event.data);
+          if (window.castReceiverManager.getSenders().length == 0) {
+            window.close();
+          }
+        };
+        
+        // handler for 'systemvolumechanged' event
+        castReceiverManager.onSystemVolumeChanged = function(event) {
+          console.log('Received System Volume Changed event: ' + event.data['level'] + ' ' + event.data['muted']);
+        };
+
+        // create a CastMessageBus to handle messages for a custom namespace
+        window.messageBus = window.castReceiverManager.getCastMessageBus('urn:x-cast:com.mumble.mumblecast');
+
+        // handler for the CastMessageBus message event
+        window.messageBus.onMessage = function(event) {
+          console.log('Message [' + event.senderId + ']: ' + event.data);
+          // display the message from the sender
+          handleMessage(event.data);
+          // inform all senders on the CastMessageBus of the incoming message event
+          // sender message listener will be invoked
+          window.messageBus.send(event.senderId, event.data);
+        }
+
+        // initialize the CastReceiverManager with an application status message
+        window.castReceiverManager.start({statusText: "Application is starting"});
+        console.log('Receiver Manager started');
+      };
+    });
+    </script>
+
+    <div id="video1"></div>
+    <div><button id="next">next</button>
+    <div id="users"></div>
+
+  </body>
+</html>
