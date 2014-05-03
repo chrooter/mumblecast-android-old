@@ -392,7 +392,7 @@ public class MainActivity extends ActionBarActivity {
             return getString(R.string.namespace);
         }
 
-        /*
+        /**
          * Receive message from the receiver app
          */
         @Override
