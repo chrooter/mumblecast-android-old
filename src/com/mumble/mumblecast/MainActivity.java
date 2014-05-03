@@ -397,7 +397,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     /**
-     * Custom message channel
+     * Custom message channel (test)
      */
     class MumbleChannel implements MessageReceivedCallback {
 
