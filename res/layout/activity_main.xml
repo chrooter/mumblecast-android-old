@@ -29,8 +29,18 @@
         android:id="@+id/voiceButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:layout_gravity="center"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="75dp"
         android:background="@drawable/voice_button" />
+
+    <SearchView
+        android:id="@+id/searchView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/voiceButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="87dp" >
+    </SearchView>
 
 </RelativeLayout>
