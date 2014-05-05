@@ -2,91 +2,35 @@
 <html>
   <head>
     <style type="text/css">
-   body {
-     
-   }
+    body {
+      background: #0099cb;
+      text-align: center;
+    }
+
+    #alert {
+      display: none;
+    }
+
+    #artwork {
+      width: 200px;
+      height: 200px;
+    }
+
+    #controls img {
+      width: 50px;
+      height: 50px;
+    }
     </style>
     <title>Mumblecast</title>
   </head>
   <body>
- <div id="message">Talk to me</div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
     <script src="//connect.soundcloud.com/sdk.js"></script>
-    <script type="text/javascript" src="//www.youtube.com/iframe_api"></script>
     <script type="text/javascript">
     $(document).ready(function() {
-      var queue = [];
-      var index = -1;
-      var currentSound = null;
-
-      var addToQueue = function(track) {
-        queue.push(track);
-      };
-
-      var playNext = function() {
-        index++;
-        var next = queue[index];
-        if (currentSound != null) currentSound.stop();
-        streamSong(next.id);
-      };
-
-      var streamSong = function(id) {
-        SC.stream("/tracks/" + id, {onfinish: playNext}, function(sound) {
-          currentSound = sound;
-          currentSound.play();
-        });
-      };
-
-      var userConnected = function(user) {
-        $("#users").append("<div>" + user + "</div>");
-      };
-
-      var onYouTubePlayerAPIReady = function() {
-        var videoBox = $("#video1");
-        videoBox.ytplayer = new YT.Player(videoBox, {
-          videoId: 'kXDiGtgPL6E',
-          playerVars: {
-            //controls: 0,
-            wmode:'transparent'
-          },
-          height: '200',
-          width: '320'
-        });
-      };
-
-      /* User events */
-      $("#next").click(function() {
-        console.log("coucou");
-        playNext();
-      });
-
-
-      /* Main */
-
-      SC.initialize({
-        client_id: "d07779451ce9508678bdd995685ad9b0"
-      });
-
-      SC.get("/tracks", {limit: 10}, function(tracks) {
-        for (var i = 0; i < tracks.length; i++) {
-          addToQueue(tracks[i]);
-        }
-        playNext();
-      });
-
-      onYouTubePlayerAPIReady();
-
-      //initializeCast();
-
 
       /* Cast */
-      
-      function handleMessage(message) {
-        document.getElementById("message").innerHTML=message + "coucou";
-        if (message == "next") playNext();
-        window.castReceiverManager.setApplicationState(message);
-      };
 
       var initializeCast = function() {
         cast.receiver.logger.setLevelValue(0);
@@ -126,7 +70,8 @@
         window.messageBus.onMessage = function(event) {
           console.log('Message [' + event.senderId + ']: ' + event.data);
           // display the message from the sender
-          handleMessage(event.data);
+          handleData(event.data);
+          window.castReceiverManager.setApplicationState(event.data);
           // inform all senders on the CastMessageBus of the incoming message event
           // sender message listener will be invoked
           window.messageBus.send(event.senderId, event.data);
@@ -136,12 +81,119 @@
         window.castReceiverManager.start({statusText: "Application is starting"});
         console.log('Receiver Manager started');
       };
+
+      var DEFAULT_ARTWORK_URL = "images/default_artwork.jpg";
+
+      var queue = [];
+      var index = -1;
+      var currentSound = null;
+
+      var handleData = function(data) {
+        $("#message").html(data);
+        if (data == "next") {
+          playNext();
+        } else if (data == "pause") {
+          pause();
+        } else if (data == "previous") {
+          playPrevious();
+        }
+      };
+
+      var addToQueue = function(track) {
+        queue.push(track);
+      };
+
+      var playNext = function() {
+        if (index < queue.length - 1) {
+          index++;
+          streamTrack(queue[index]);
+        } else {
+          displayAlert("No more tracks!");
+        }
+      };
+
+      var playPrevious = function() {
+        if (index > 0) {
+          index--;
+          streamTrack(queue[index]);
+        } else {
+          displayAlert("First track");
+        }
+      };
+
+      var pause = function() {
+        if (currentSound != null) currentSound.togglePause();
+      };
+
+      var streamTrack = function(track) {
+        console.log(track);
+        if (currentSound != null) currentSound.stop();
+        $("#title").html(track.title + " - " + track.user.username);
+        $("#artwork").attr("src", track.artwork_url == null ? DEFAULT_ARTWORK_URL : track.artwork_url);
+        SC.stream("/tracks/" + track.id, {onfinish: playNext}, function(sound) {
+          currentSound = sound;
+          currentSound.play();
+        });
+      };
+
+      var displayAlert = function(message) {
+        $("#alert").html(message);
+        $("#alert").fadeIn();
+
+        setTimeout(clearAlert, 4000);
+      };
+
+      var clearAlert = function() {
+        $("#alert").fadeOut("slow", function() {
+          $("#alert").html("");
+        });
+      };
+
+      var userConnected = function(user) {
+        $("#users").append("<div>" + user + "</div>");
+      };
+
+      /* User events */
+      $("#next").click(function() {
+        playNext();
+      });
+
+      $("#previous").click(function() {
+        playPrevious();
+      });
+
+      $("#pause").click(function() {
+        pause();
+      });
+
+      /* Main */
+
+      initializeCast();
+
+      SC.initialize({
+        client_id: "d07779451ce9508678bdd995685ad9b0"
+      });
+
+      SC.get("/tracks", {limit: 10}, function(tracks) {
+        console.log(tracks);
+        for (var i = 0; i < tracks.length; i++) {
+          addToQueue(tracks[i]);
+        }
+        playNext();
+      });
     });
     </script>
 
-    <div id="video1"></div>
-    <div><button id="next">next</button>
+    <div><h1 id="message">Talk to me</h1></div>
+    <div id="title"></div>
+    <div><img id="artwork" /></div>
+    <div id="controls">
+      <img id="previous" src="images/previous.png" />
+      <img id="pause" src="images/pause.png" />
+      <img id="next" src="images/next.png" />
+    </div>
     <div id="users"></div>
+    <div id="alert"></div>
 
   </body>
 </html>
