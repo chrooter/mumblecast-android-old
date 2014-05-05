@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">MumbleCast</string>
+    <string name="app_name">Mumblecast</string>
     <string name="app_id">AFE6D742</string>
     <string name="namespace">urn:x-cast:com.mumble.mumblecast</string>
     <string name="action_settings">Settings</string>
