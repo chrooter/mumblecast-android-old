@@ -8,5 +8,10 @@
     <string name="message_to_cast">Message to Cast&#8230;</string>
     <string name="media_route_menu_title">Play on&#8230;</string>
     <string name="instructions">Talk to me</string>
+    
+    <string name="soundcloud_id">d07779451ce9508678bdd995685ad9b0</string>
+    <string name="soundcloud_secret">4b05beee5a96f0568550c8e9a83ab212</string>
+    
+    <string name="search_button">Search</string>
 
 </resources>

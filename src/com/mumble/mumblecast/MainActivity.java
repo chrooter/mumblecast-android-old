@@ -3,8 +3,13 @@ package com.mumble.mumblecast;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.http.HttpResponse;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.v4.view.MenuItemCompat;
@@ -32,6 +37,9 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.soundcloud.api.ApiWrapper;
+import com.soundcloud.api.Endpoints;
+import com.soundcloud.api.Request;
 
 /**
  * Main activity to send messages to the receiver.
@@ -41,6 +49,11 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int REQUEST_CODE = 1;
+
+    private static final String TYPE = "type";
+    private static final String VALUE = "value";
+    private static final String COMMAND = "voice-command";
+    private static final String SOUNDCLOUD_IDS = "soundloud-ids";
 
     private MediaRouter mMediaRouter;
     private MediaRouteSelector mMediaRouteSelector;
@@ -54,6 +67,7 @@ public class MainActivity extends ActionBarActivity {
     private boolean mApplicationStarted;
     private boolean mWaitingForReconnect;
     private String mSessionId;
+    private ApiWrapper soundCloud;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,13 +88,35 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
-        // Configure Cast device discovery
+        Button searchButton = (Button) findViewById(R.id.searchButton);
+        searchButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new NetworkTask().execute(Endpoints.TRACKS);
+
+            }
+        });
+
+        initCast();
+        initSoundCloudAPI();
+    }
+
+    /**
+     * Configure Cast device discovery
+     */
+    private void initCast() {
         mMediaRouter = MediaRouter.getInstance(getApplicationContext());
         mMediaRouteSelector = new MediaRouteSelector.Builder()
                 .addControlCategory(
                         CastMediaControlIntent.categoryForCast(getResources()
                                 .getString(R.string.app_id))).build();
         mMediaRouterCallback = new MyMediaRouterCallback();
+    }
+
+    private void initSoundCloudAPI() {
+        soundCloud = new ApiWrapper(getResources().getString(
+                R.string.soundcloud_id), getResources().getString(
+                R.string.soundcloud_secret), null, null);
     }
 
     /**
@@ -108,7 +144,7 @@ public class MainActivity extends ActionBarActivity {
                     .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (matches.size() > 0) {
                 Log.d(TAG, matches.get(0));
-                sendMessage(matches.get(0));
+                sendCommand(matches.get(0));
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -287,10 +323,6 @@ public class MainActivity extends ActionBarActivity {
                                                             "Exception while creating channel",
                                                             e);
                                                 }
-
-                                                // set the initial instructions
-                                                // on the receiver
-                                                sendMessage(getString(R.string.instructions));
                                             } else {
                                                 Log.e(TAG,
                                                         "application could not launch");
@@ -354,15 +386,15 @@ public class MainActivity extends ActionBarActivity {
     }
 
     /**
-     * Send a text message to the receiver
+     * Send data as JSON to the receiver
      * 
-     * @param message
+     * @param json
      */
-    private void sendMessage(String message) {
+    private void sendData(JSONObject json) {
         if (mApiClient != null && mMumbleChannel != null) {
             try {
                 Cast.CastApi.sendMessage(mApiClient,
-                        mMumbleChannel.getNamespace(), message)
+                        mMumbleChannel.getNamespace(), json.toString())
                         .setResultCallback(new ResultCallback<Status>() {
                             @Override
                             public void onResult(Status result) {
@@ -375,8 +407,51 @@ public class MainActivity extends ActionBarActivity {
                 Log.e(TAG, "Exception while sending message", e);
             }
         } else {
-            Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT)
+            Toast.makeText(MainActivity.this, json.toString(),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void sendCommand(String command) {
+        try {
+            JSONObject jsonObj = new JSONObject();
+            jsonObj.put(TYPE, COMMAND);
+            jsonObj.put(VALUE, command);
+            sendData(jsonObj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendSoundCloudIDs(String... ids) {
+        try {
+            JSONObject jsonObj = new JSONObject();
+            jsonObj.put(TYPE, SOUNDCLOUD_IDS);
+            jsonObj.put(VALUE, ids);
+            sendData(jsonObj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
+        @Override
+        protected HttpResponse doInBackground(String... endPoint) {
+            try {
+                return soundCloud.get(Request.to(endPoint[0]));
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(HttpResponse resp) {
+            String result = resp.;
+            System.out.println(result);
+            Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT)
                     .show();
+
         }
     }
 

@@ -83,6 +83,8 @@
       };
 
       var DEFAULT_ARTWORK_URL = "images/default_artwork.jpg";
+	  var COMMAND = "command";
+      var SOUNDCLOUD_IDS = "soundcloud-ids";
 
       var queue = [];
       var index = -1;
@@ -90,14 +92,23 @@
 
       var handleData = function(data) {
         $("#message").html(data);
-        if (data == "next") {
-          playNext();
-        } else if (data == "pause") {
-          pause();
-        } else if (data == "previous") {
-          playPrevious();
+		var json = JSON.parse(data);
+        if (json.type == COMMAND) {
+            handleCommand(json.value);
+        } else if (json.type == SOUNDCLOUD_IDS) {
+            addToQueue(json.value);
         }
       };
+	  
+	  var handleCommand = function(command) {
+		if (command == "next") {
+          playNext();
+        } else if (command == "pause") {
+          pause();
+        } else if (command == "previous") {
+          playPrevious();
+        }
+	  };
 
       var addToQueue = function(track) {
         queue.push(track);
