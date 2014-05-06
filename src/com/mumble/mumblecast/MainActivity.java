@@ -39,6 +39,7 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.soundcloud.api.ApiWrapper;
 import com.soundcloud.api.Endpoints;
+import com.soundcloud.api.Http;
 import com.soundcloud.api.Request;
 
 /**
@@ -92,8 +93,8 @@ public class MainActivity extends ActionBarActivity {
         searchButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                new NetworkTask().execute(Endpoints.TRACKS);
-
+                new SoundCloudAPICallTask().execute(Endpoints.TRACKS
+                        + "/13158665");
             }
         });
 
@@ -434,11 +435,25 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
+    private void handleSoundCloudAPIResponse(String endPoint, JSONObject json) {
+        try {
+            Toast.makeText(MainActivity.this, json.getString("title"),
+                    Toast.LENGTH_SHORT).show();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class SoundCloudAPICallTask extends AsyncTask<String, Void, String> {
+
+        private String endPoint;
+
         @Override
-        protected HttpResponse doInBackground(String... endPoint) {
+        protected String doInBackground(String... params) {
             try {
-                return soundCloud.get(Request.to(endPoint[0]));
+                endPoint = params[0];
+                HttpResponse response = soundCloud.get(Request.to(endPoint));
+                return Http.formatJSON(Http.getString(response));
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -446,12 +461,12 @@ public class MainActivity extends ActionBarActivity {
         }
 
         @Override
-        protected void onPostExecute(HttpResponse resp) {
-            String result = resp.;
-            System.out.println(result);
-            Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT)
-                    .show();
-
+        protected void onPostExecute(String result) {
+            try {
+                handleSoundCloudAPIResponse(endPoint, new JSONObject(result));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
